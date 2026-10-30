@@ -1,10 +1,54 @@
-import React, { useContext } from 'react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 import { ShopContext } from '../context/ShopContext'
 import Title from '../components/Title'
+import axios from 'axios'
 
 const Orders = () => {
 
-  const { products, currency } = useContext(ShopContext)
+ const { backendUrl, token, currency } = useContext(ShopContext);
+
+const [orderData, setorderData] = useState([]);
+
+const loadOrderData = useCallback(async () => {
+    try {
+        if (!token) {
+            return null;
+        }
+
+        const response = await axios.post(
+            backendUrl + '/api/order/userorders',
+            {},
+            { headers: { token } }
+        );
+
+        if (response.data.success) {
+            let allOrdersItem = [];
+
+            response.data.orders.map((order) => {
+                order.items.map((item) => {
+                    item['status'] = order.status;
+                    item['payment'] = order.payment;
+                    item['paymentMethod'] = order.paymentMethod;
+                    item['date'] = order.date;
+
+                    allOrdersItem.push(item);
+                });
+            });
+
+            setorderData(allOrdersItem.reverse());
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}, [backendUrl, token]);
+
+useEffect(() => {
+    const timeoutId = setTimeout(() => {
+        void loadOrderData();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+}, [loadOrderData]);
 
   return (
     <div className="border-t pt-16">
@@ -17,7 +61,7 @@ const Orders = () => {
       {/* Orders */}
       <div>
 
-        {products.slice(1, 4).map((item, index) => (
+        {orderData.map((item, index) => (
 
           <div
             key={index}
@@ -50,19 +94,25 @@ const Orders = () => {
                   </p>
 
                   <p>
-                    Quantity: 1
+                    Quantity: {item.quantity}
                   </p>
 
                   <p>
-                    Size: M
+                    Size: {item.size}
                   </p>
 
                 </div>
 
-                <p className="mt-2">
+                <p className="mt-1">
                   Date:{' '}
                   <span className="text-gray-400">
-                    25, Jul, 2024
+                    {new Date(item.date).toLocaleDateString()}
+                  </span>
+                </p>
+                <p className="mt-1">
+                  Payment Method:{' '}
+                  <span className="text-gray-400">
+                    {item.paymentMethod}
                   </span>
                 </p>
 
@@ -79,7 +129,7 @@ const Orders = () => {
                 <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
 
                 <p className="text-sm md:text-base">
-                  Ready to ship
+                  {item.status}
                 </p>
 
               </div>
