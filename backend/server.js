@@ -11,7 +11,27 @@ import orderRouter from './routes/orderRoute.js'
 const app = express()
 dotenv.config()
 
-app.use(cors())
+const allowedOrigins = new Set([
+  'https://forever-2wmn.vercel.app',
+  'http://localhost:5173'
+])
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true)
+      return
+    }
+
+    callback(new Error('Origin is not allowed by CORS'))
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'token'],
+  optionsSuccessStatus: 204
+}
+
+app.use(cors(corsOptions))
+app.options(/.*/, cors(corsOptions))
 
 app.get('/', (req, res) => {
   res.send('Hello from the backend!')
@@ -19,10 +39,21 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000   
 
-connectDB();
 connectCloudinary();
 
 app.use(express.json());
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error(`MongoDB connection error: ${error.message}`);
+    res.status(503).json({
+      success: false,
+      message: 'Database is temporarily unavailable'
+    });
+  }
+});
 app.use("/api/user", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/cart", cartRouter);
@@ -30,7 +61,10 @@ app.use("/api/order" , orderRouter);
 
 
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`)
-})
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`)
+  })
+}
 
+export default app
