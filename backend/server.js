@@ -12,8 +12,8 @@ const app = express()
 dotenv.config()
 
 const allowedOrigins = new Set([
-  'https://forever-2wmn.vercel.app',
-  'http://localhost:5173'
+  'http://localhost:5173',
+  'https://forever-frontend-two-chi.vercel.app'
 ])
 
 const corsOptions = {
