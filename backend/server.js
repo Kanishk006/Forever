@@ -13,7 +13,9 @@ dotenv.config()
 
 const allowedOrigins = new Set([
   'http://localhost:5173',
-  'https://forever-frontend-two-chi.vercel.app'
+  'https://forever-frontend-two-chi.vercel.app',
+  'http://localhost:5174',
+  'https://forever-admin-three-iota.vercel.app'
 ])
 
 const corsOptions = {
